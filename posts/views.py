@@ -1,5 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
+from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
@@ -8,9 +9,10 @@ from .serializers import PostSerializer
 from .pagination import PostPagination
 
 
+
 class PostViewSet(ModelViewSet):
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     filter_backends = [SearchFilter]
     search_fields = ["title", "body"]
