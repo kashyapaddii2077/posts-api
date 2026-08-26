@@ -1,6 +1,11 @@
+from django.contrib.auth.models import User
+from rest_framework.viewsets import ReadOnlyModelViewSet
+from .user_serializers import UserSerializer
+
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
 
 from drf_spectacular.utils import (
     extend_schema,
@@ -71,3 +76,10 @@ class PostViewSet(ModelViewSet):
             queryset = queryset.filter(user_id=user_id)
 
         return queryset
+
+
+class UserViewSet(ReadOnlyModelViewSet):
+
+    queryset = User.objects.all().order_by("id")
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]

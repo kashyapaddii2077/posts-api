@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "posts",
     "drf_spectacular",
     "corsheaders",
+    "rest_framework.authtoken",
 ]
 
 
@@ -80,13 +81,39 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
     ],
 
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
 }
+
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Posts API",
+    "DESCRIPTION": "API documentation for Posts API",
+    "VERSION": "1.0.0",
+
+    "SERVE_INCLUDE_SCHEMA": False,
+
+    "SECURITY": [
+        {
+            "tokenAuth": [],
+        }
+    ],
+
+    "COMPONENTS": {
+        "securitySchemes": {
+            "tokenAuth": {
+                "type": "http",
+                "scheme": "bearer",
+            },
+        },
+    },
+}
+
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

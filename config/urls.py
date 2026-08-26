@@ -20,6 +20,7 @@ from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
 )
+from rest_framework.authtoken.views import obtain_auth_token
 
 
 urlpatterns = [
@@ -28,6 +29,8 @@ urlpatterns = [
     path("api/", include("posts.urls")),
 
     path("api-auth/", include("rest_framework.urls")),
+
+    path("api/token/", obtain_auth_token, name="api_token"),
 
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
