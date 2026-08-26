@@ -1,16 +1,20 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiTypes,
+)
 
 from .models import Post
 from .serializers import PostSerializer
 from .pagination import PostPagination
 
 
-
 class PostViewSet(ModelViewSet):
+
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
 
@@ -59,6 +63,3 @@ class PostViewSet(ModelViewSet):
             queryset = queryset.filter(user_id=user_id)
 
         return queryset
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
