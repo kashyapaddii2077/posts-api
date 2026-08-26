@@ -1,5 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from .models import Post
@@ -8,8 +9,8 @@ from .pagination import PostPagination
 
 
 class PostViewSet(ModelViewSet):
-    queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
 
     filter_backends = [SearchFilter]
     search_fields = ["title", "body"]
@@ -48,7 +49,7 @@ class PostViewSet(ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Post.objects.all().order_by("-created_at")
 
         user_id = self.request.query_params.get("user_id")
 
@@ -56,4 +57,6 @@ class PostViewSet(ModelViewSet):
             queryset = queryset.filter(user_id=user_id)
 
         return queryset
-    
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
