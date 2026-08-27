@@ -94,23 +94,24 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Posts API",
     "DESCRIPTION": "API documentation for Posts API",
     "VERSION": "1.0.0",
-
     "SERVE_INCLUDE_SCHEMA": False,
+
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "tokenAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Enter: Token <your-auth-token>",
+            }
+        }
+    },
 
     "SECURITY": [
         {
             "tokenAuth": [],
         }
     ],
-
-    "COMPONENTS": {
-        "securitySchemes": {
-            "tokenAuth": {
-                "type": "http",
-                "scheme": "bearer",
-            },
-        },
-    },
 }
 
 
