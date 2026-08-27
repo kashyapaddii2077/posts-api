@@ -11,6 +11,7 @@ class PostSerializer(serializers.ModelSerializer):
             "user",
             "title",
             "body",
+            "file",
             "created_at",
             "updated_at",
         ]

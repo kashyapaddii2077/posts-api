@@ -95,6 +95,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API documentation for Posts API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
 
     "APPEND_COMPONENTS": {
         "securitySchemes": {
@@ -225,3 +226,6 @@ if not DEBUG:
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
