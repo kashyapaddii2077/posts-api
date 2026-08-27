@@ -20,9 +20,9 @@ from drf_spectacular.utils import (
 )
 
 from .models import Post
+from .pagination import PostPagination
 from .serializers import PostSerializer
 from .user_serializers import UserSerializer
-from .pagination import PostPagination
 
 
 class PostViewSet(ModelViewSet):
@@ -31,15 +31,16 @@ class PostViewSet(ModelViewSet):
     permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, FormParser]
 
-    def get_permissions(self):
-        if self.action in ["create", "bulk_create"]:
-            return [IsAuthenticated()]
-        return [AllowAny()]
-
     filter_backends = [SearchFilter]
     search_fields = ["title", "body"]
 
     pagination_class = PostPagination
+
+    def get_permissions(self):
+        if self.action in ["create", "bulk_create"]:
+            return [IsAuthenticated()]
+
+        return [AllowAny()]
 
     @extend_schema(
         parameters=[
@@ -82,7 +83,7 @@ class PostViewSet(ModelViewSet):
                 fields={
                     "posts": serializers.CharField(
                         help_text=(
-                            'JSON array of posts. Example: '
+                            "JSON array of posts. Example: "
                             '[{"title": "Post 1", "body": "Body 1"}, '
                             '{"title": "Post 2", "body": "Body 2"}]'
                         )
@@ -92,18 +93,10 @@ class PostViewSet(ModelViewSet):
                         help_text=(
                             "Upload one file for each post. "
                             "Files must be in the same order as posts."
-                        )
+                        ),
                     ),
                 },
             ),
-            encoding={
-                "posts": {
-                    "contentType": "application/json"
-                },
-                "files": {
-                    "contentType": "application/octet-stream"
-                },
-            },
         ),
         responses=PostSerializer(many=True),
     )
@@ -114,6 +107,7 @@ class PostViewSet(ModelViewSet):
     )
     def bulk_create(self, request, *args, **kwargs):
 
+        # Get posts from multipart form data
         posts_data = request.data.get("posts")
 
         if not posts_data:
@@ -122,27 +116,40 @@ class PostViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Convert bytes to string if required
+        if isinstance(posts_data, bytes):
+            posts_data = posts_data.decode("utf-8")
 
+        # Swagger sends the posts field as a JSON string
         if isinstance(posts_data, str):
+
+            posts_data = posts_data.strip()
+
+            # Swagger can send:
+            # [{"title":"Post 1","body":"Body 1"}, ...]
+            #
+            # Parse that JSON string into a Python list.
             try:
-                    posts_data = json.loads(posts_data)
-            except json.JSONDecodeError:
+                posts_data = json.loads(posts_data)
+
+            except (json.JSONDecodeError, TypeError):
                 return Response(
-                {"error": "posts must contain valid JSON."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+                    {
+                        "error": "Invalid JSON in posts field.",
+                        "received": posts_data,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        # Handle JSON object containing a "posts" list
-        if isinstance(posts_data, dict) and "posts" in posts_data:
-            posts_data = posts_data["posts"]
-
+        # At this point posts_data must be a list
         if not isinstance(posts_data, list):
             return Response(
-                {"error": "posts must be a JSON list."},
+                {
+                    "error": "posts must be a JSON list.",
+                    "received_type": type(posts_data).__name__,
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        
 
         if not posts_data:
             return Response(
@@ -150,14 +157,17 @@ class PostViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Get uploaded files
         files = request.FILES.getlist("files")
 
+        # One file is required for every post
         if len(files) != len(posts_data):
             return Response(
                 {
                     "error": (
-                        "The number of files must match "
-                        "the number of posts."
+                        f"The number of files ({len(files)}) "
+                        f"must match the number of posts "
+                        f"({len(posts_data)})."
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -165,7 +175,19 @@ class PostViewSet(ModelViewSet):
 
         serializers_list = []
 
+        # Validate every post before creating anything
         for post_data in posts_data:
+
+            if not isinstance(post_data, dict):
+                return Response(
+                    {
+                        "error": (
+                            "Each item in posts must be "
+                            "a JSON object."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             serializer = self.get_serializer(
                 data=post_data
@@ -179,12 +201,14 @@ class PostViewSet(ModelViewSet):
 
         created_posts = []
 
+        # Create all posts as one transaction
         with transaction.atomic():
 
             for serializer, uploaded_file in zip(
                 serializers_list,
                 files,
             ):
+
                 post = serializer.save(
                     user=request.user,
                     file=uploaded_file,
@@ -192,6 +216,7 @@ class PostViewSet(ModelViewSet):
 
                 created_posts.append(post)
 
+        # Return all created posts
         response_serializer = self.get_serializer(
             created_posts,
             many=True,
@@ -203,9 +228,14 @@ class PostViewSet(ModelViewSet):
         )
 
     def get_queryset(self):
-        queryset = Post.objects.all().order_by("-created_at")
 
-        user_id = self.request.query_params.get("user_id")
+        queryset = Post.objects.all().order_by(
+            "-created_at"
+        )
+
+        user_id = self.request.query_params.get(
+            "user_id"
+        )
 
         if user_id:
             queryset = queryset.filter(
@@ -218,5 +248,7 @@ class PostViewSet(ModelViewSet):
 class UserViewSet(ReadOnlyModelViewSet):
 
     queryset = User.objects.all().order_by("id")
+
     serializer_class = UserSerializer
+
     permission_classes = [AllowAny]
