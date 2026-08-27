@@ -28,6 +28,7 @@ from .permissions import IsOwnerOrAdmin
 
 class PostViewSet(ModelViewSet):
 
+    queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, FormParser]
