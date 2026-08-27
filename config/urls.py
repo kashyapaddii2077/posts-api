@@ -1,10 +1,3 @@
-"""
-URL configuration for config project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-https://docs.djangoproject.com/en/4.2/topics/http/urls/
-"""
-
 from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
@@ -23,18 +16,32 @@ urlpatterns = [
 
     path("api/", include("posts.urls")),
 
-    path("api-auth/", include("rest_framework.urls")),
+    path(
+        "api-auth/",
+        include("rest_framework.urls"),
+    ),
 
-    path("api/token/", obtain_auth_token, name="api_token"),
+    path(
+        "api/token/",
+        obtain_auth_token,
+        name="api_token",
+    ),
 
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/schema/",
+        SpectacularAPIView.as_view(),
+        name="schema",
+    ),
 
     path(
         "api/docs/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
+        SpectacularSwaggerView.as_view(
+            url_name="schema"
+        ),
         name="swagger-ui",
     ),
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(

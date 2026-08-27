@@ -23,6 +23,7 @@ from .models import Post
 from .pagination import PostPagination
 from .serializers import PostSerializer
 from .user_serializers import UserSerializer
+from .permissions import IsOwnerOrAdmin
 
 
 class PostViewSet(ModelViewSet):
@@ -37,10 +38,18 @@ class PostViewSet(ModelViewSet):
     pagination_class = PostPagination
 
     def get_permissions(self):
+
         if self.action in ["create", "bulk_create"]:
             return [IsAuthenticated()]
 
+        if self.action in ["update", "partial_update", "destroy"]:
+            return [
+                IsAuthenticated(),
+                IsOwnerOrAdmin(),
+            ]
+
         return [AllowAny()]
+    
 
     @extend_schema(
         parameters=[
@@ -227,28 +236,100 @@ class PostViewSet(ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+    
     def get_queryset(self):
 
         queryset = Post.objects.all().order_by(
-            "-created_at"
+        "-created_at"
         )
 
-        user_id = self.request.query_params.get(
-            "user_id"
-        )
+        user_id = self.request.query_params.get("user_id")
 
         if user_id:
             queryset = queryset.filter(
-                user_id=user_id
+            user_id=user_id
             )
 
+        role = self.request.query_params.get("role")
+
+        if role:
+            role = role.lower()
+
+            if role == "admin":
+                queryset = queryset.filter(
+                    user__is_staff=True
+                )
+
+            elif role == "user":
+                queryset = queryset.filter(
+                    user__is_staff=False
+                )
+
         return queryset
+    
 
 
 class UserViewSet(ReadOnlyModelViewSet):
 
-    queryset = User.objects.all().order_by("id")
-
     serializer_class = UserSerializer
 
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+
+        queryset = User.objects.all().order_by("id")
+
+        role = self.request.query_params.get("role")
+
+        if role:
+            role = role.lower()
+
+            if role == "admin":
+                queryset = queryset.filter(is_staff=True)
+
+            elif role == "user":
+                queryset = queryset.filter(is_staff=False)
+
+        return queryset
+    @extend_schema(
+        parameters=[
+
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Search posts by title or body.",
+            ),
+
+            OpenApiParameter(
+                name="user_id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter posts by user ID.",
+            ),
+
+            OpenApiParameter(
+                name="role",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter posts by user role: Admin or User.",
+            ),
+
+            OpenApiParameter(
+                name="page",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Page number.",
+            ),
+
+            OpenApiParameter(
+                name="page_size",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Number of posts per page.",
+            ),
+            
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
