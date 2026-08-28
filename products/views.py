@@ -1,3 +1,4 @@
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,6 +13,7 @@ class ProductViewSet(ModelViewSet):
 
     serializer_class = ProductSerializer
     filter_backends = [SearchFilter]
+    parser_classes = [MultiPartParser, FormParser]
 
     search_fields = [
         "sku",

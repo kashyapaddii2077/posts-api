@@ -21,6 +21,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "is_deleted",
             "created_at",
             "updated_at",
+            "image",
         ]
 
         read_only_fields = [

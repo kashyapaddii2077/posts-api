@@ -19,6 +19,12 @@ class Product(models.Model):
         max_length=255,
     )
 
+    image = models.ImageField(
+        upload_to="products/",
+        blank=True,
+        null=True,
+    )
+
     category = models.CharField(
         max_length=100,
     )
