@@ -1,3 +1,6 @@
+import random
+import string
+
 from rest_framework import serializers
 
 from .models import Product
@@ -15,17 +18,16 @@ class ProductSerializer(serializers.ModelSerializer):
             "category",
             "price",
             "stock",
-            "quantity",
             "tax_rate",
             "gst",
             "is_deleted",
             "created_at",
             "updated_at",
-            "image",
         ]
 
         read_only_fields = [
             "id",
+            "sku",
             "is_deleted",
             "created_at",
             "updated_at",
@@ -40,3 +42,23 @@ class ProductSerializer(serializers.ModelSerializer):
             )
 
         return value
+
+    def create(self, validated_data):
+
+        while True:
+            letters = "".join(
+                random.choices(string.ascii_uppercase, k=3)
+            )
+
+            numbers = "".join(
+                random.choices(string.digits, k=6)
+            )
+
+            sku = f"PRD-{letters}{numbers}"
+
+            if not Product.objects.filter(sku=sku).exists():
+                break
+
+        validated_data["sku"] = sku
+
+        return Product.objects.create(**validated_data)
