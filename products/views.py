@@ -20,9 +20,25 @@ class ProductViewSet(ModelViewSet):
     ]
 
     def get_queryset(self):
-        return Product.objects.filter(
-            is_deleted=False
-        ).order_by("-created_at")
+
+        is_deleted = self.request.query_params.get("isDeleted")
+
+        if is_deleted is None:
+            return Product.objects.filter(
+                is_deleted=False
+            ).order_by("-created_at")
+
+        if is_deleted.lower() == "true":
+            return Product.objects.filter(
+                is_deleted=True
+            ).order_by("-created_at")
+
+        if is_deleted.lower() == "false":
+            return Product.objects.filter(
+                is_deleted=False
+            ).order_by("-created_at")
+
+        return Product.objects.none()
 
     def get_permissions(self):
 
@@ -35,6 +51,60 @@ class ProductViewSet(ModelViewSet):
             return [IsAuthenticated()]
 
         return [AllowAny()]
+
+    def list(self, request, *args, **kwargs):
+
+        is_deleted = request.query_params.get("isDeleted")
+
+        if (
+            is_deleted is not None
+            and is_deleted.lower() not in ["true", "false"]
+        ):
+            return Response(
+                {
+                    "status": False,
+                    "message": "isDeleted must be true or false."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+
+            serializer = self.get_serializer(
+                page,
+                many=True,
+            )
+
+            return Response({
+                "status": True,
+                "data": serializer.data,
+                "pagination": {
+                    "page": int(
+                        request.query_params.get("page", 1)
+                    ),
+                    "current": len(page),
+                    "totalProduct": queryset.count(),
+                },
+            })
+
+        serializer = self.get_serializer(
+            queryset,
+            many=True,
+        )
+
+        return Response({
+            "status": True,
+            "data": serializer.data,
+            "pagination": {
+                "page": 1,
+                "current": len(serializer.data),
+                "totalProduct": queryset.count(),
+            },
+        })
 
     def destroy(self, request, *args, **kwargs):
 
