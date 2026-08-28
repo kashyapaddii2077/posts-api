@@ -74,6 +74,8 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "rest_framework.authtoken",
+    "products",
+    "inventory",
 ]
 
 
