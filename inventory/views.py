@@ -4,6 +4,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiTypes,
+)
+
 from .models import Inventory
 from .serializers import InventorySerializer
 
@@ -13,6 +19,7 @@ class InventoryViewSet(ModelViewSet):
     queryset = Inventory.objects.filter(
         is_deleted=False
     ).order_by("-created_at")
+
     serializer_class = InventorySerializer
 
     filter_backends = [SearchFilter]
@@ -30,11 +37,50 @@ class InventoryViewSet(ModelViewSet):
 
         return [AllowAny()]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="isDeleted",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description=(
+                    "Filter inventory by deletion status. "
+                    "true returns only deleted inventory, "
+                    "false returns only active inventory."
+                ),
+            ),
+        ]
+    )
     def list(self, request, *args, **kwargs):
 
-        queryset = self.filter_queryset(
-            self.get_queryset()
-        )
+        is_deleted = request.query_params.get("isDeleted")
+
+        if is_deleted is None:
+            queryset = Inventory.objects.filter(
+                is_deleted=False
+            ).order_by("-created_at")
+
+        elif is_deleted.lower() == "true":
+            queryset = Inventory.objects.filter(
+                is_deleted=True
+            ).order_by("-created_at")
+
+        elif is_deleted.lower() == "false":
+            queryset = Inventory.objects.filter(
+                is_deleted=False
+            ).order_by("-created_at")
+
+        else:
+            return Response(
+                {
+                    "status": False,
+                    "message": "isDeleted must be true or false."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = self.filter_queryset(queryset)
 
         page = self.paginate_queryset(queryset)
 
@@ -75,8 +121,6 @@ class InventoryViewSet(ModelViewSet):
             },
         })
 
-    
-
     def destroy(self, request, *args, **kwargs):
 
         inventory = self.get_object()
@@ -91,5 +135,4 @@ class InventoryViewSet(ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
-
 
