@@ -29,7 +29,7 @@ class ProductViewSet(ModelViewSet):
         queryset = Product.objects.all()
 
         if is_deleted is None:
-            queryset = queryset.filter(is_deleted=False)
+            pass
 
         elif is_deleted.lower() == "true":
             queryset = queryset.filter(is_deleted=True)
