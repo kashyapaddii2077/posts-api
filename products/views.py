@@ -24,23 +24,27 @@ class ProductViewSet(ModelViewSet):
     def get_queryset(self):
 
         is_deleted = self.request.query_params.get("isDeleted")
+        category = self.request.query_params.get("category")
+
+        queryset = Product.objects.all()
 
         if is_deleted is None:
-            return Product.objects.filter(
-                is_deleted=False
-            ).order_by("-created_at")
+            queryset = queryset.filter(is_deleted=False)
 
-        if is_deleted.lower() == "true":
-            return Product.objects.filter(
-                is_deleted=True
-            ).order_by("-created_at")
+        elif is_deleted.lower() == "true":
+            queryset = queryset.filter(is_deleted=True)
 
-        if is_deleted.lower() == "false":
-            return Product.objects.filter(
-                is_deleted=False
-            ).order_by("-created_at")
+        elif is_deleted.lower() == "false":
+            queryset = queryset.filter(is_deleted=False)
 
-        return Product.objects.none()
+        else:
+            return Product.objects.none()
+
+        if category:
+            queryset = queryset.filter(category__iexact=category)
+
+        return queryset.order_by("-created_at")
+    
 
     def get_permissions(self):
 
