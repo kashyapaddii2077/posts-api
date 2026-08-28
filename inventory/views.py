@@ -10,7 +10,9 @@ from .serializers import InventorySerializer
 
 class InventoryViewSet(ModelViewSet):
 
-    queryset = Inventory.objects.all().order_by("-created_at")
+    queryset = Inventory.objects.filter(
+        is_deleted=False
+    ).order_by("-created_at")
     serializer_class = InventorySerializer
 
     filter_backends = [SearchFilter]
@@ -73,29 +75,21 @@ class InventoryViewSet(ModelViewSet):
             },
         })
 
-    def update(self, request, *args, **kwargs):
-
-        return Response(
-            {
-                "detail": "Inventory update is not allowed."
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def partial_update(self, request, *args, **kwargs):
-
-        return Response(
-            {
-                "detail": "Inventory update is not allowed."
-            },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
+    
 
     def destroy(self, request, *args, **kwargs):
 
+        inventory = self.get_object()
+
+        inventory.is_deleted = True
+        inventory.save(update_fields=["is_deleted"])
+
         return Response(
             {
-                "detail": "Inventory delete is not allowed."
+                "status": True,
+                "message": "Inventory deleted successfully."
             },
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            status=status.HTTP_200_OK,
         )
+
+
