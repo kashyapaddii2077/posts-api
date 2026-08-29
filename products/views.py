@@ -26,6 +26,45 @@ class ProductViewSet(ModelViewSet):
         "category",
     ]
 
+
+@action(
+    detail=False,
+    methods=["get"],
+    url_path="cards",
+)
+def cards(self, request):
+
+    queryset = self.get_queryset().filter(
+        is_deleted=False
+    )
+
+    total_products = queryset.count()
+
+    in_stock = queryset.filter(
+        stock__gt=10
+    ).count()
+
+    low_stock = queryset.filter(
+        stock__gt=0,
+        stock__lte=10
+    ).count()
+
+    out_of_stock = queryset.filter(
+        stock=0
+    ).count()
+
+    return Response({
+        "status": True,
+        "data": {
+            "total_products": total_products,
+            "in_stock": in_stock,
+            "out_of_stock": out_of_stock,
+            "low_stock": low_stock,
+        },
+    })
+
+    
+
     @action(
         detail=False,
         methods=["get"],
@@ -187,5 +226,12 @@ class ProductViewSet(ModelViewSet):
         )
 
         return Response(
-            status=status.HTTP_204_NO_CONTENT
+        {
+            "status": 204,
+            "message": "The item has been deleted",
+        },
+        status=status.HTTP_200_OK,
         )
+
+
+

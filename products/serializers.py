@@ -69,8 +69,10 @@ class ProductSerializer(serializers.ModelSerializer):
     stock_status = serializers.SerializerMethodField()
 
     def get_stock_status(self, obj):
-        if obj.quantity == 0:
+        if obj.stock == 0:
             return "Out of Stock"
 
-        return "In Stock"
+        if obj.stock <= 10:
+            return "Low Stock"
 
+        return "In Stock"
