@@ -1,8 +1,8 @@
 import csv
 
 from django.http import HttpResponse
-from rest_framework.decorators import action
 
+from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 from rest_framework.filters import SearchFilter
@@ -16,6 +16,7 @@ from .serializers import ProductSerializer
 
 class ProductViewSet(ModelViewSet):
 
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
     filter_backends = [SearchFilter]
     parser_classes = [MultiPartParser, FormParser]
@@ -26,44 +27,41 @@ class ProductViewSet(ModelViewSet):
         "category",
     ]
 
-
-@action(
-    detail=False,
-    methods=["get"],
-    url_path="cards",
-)
-def cards(self, request):
-
-    queryset = self.get_queryset().filter(
-        is_deleted=False
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="cards",
     )
+    def cards(self, request):
 
-    total_products = queryset.count()
+        queryset = self.get_queryset().filter(
+            is_deleted=False
+        )
 
-    in_stock = queryset.filter(
-        stock__gt=10
-    ).count()
+        total_products = queryset.count()
 
-    low_stock = queryset.filter(
-        stock__gt=0,
-        stock__lte=10
-    ).count()
+        in_stock = queryset.filter(
+            stock__gt=10
+        ).count()
 
-    out_of_stock = queryset.filter(
-        stock=0
-    ).count()
+        low_stock = queryset.filter(
+            stock__gt=0,
+            stock__lte=10
+        ).count()
 
-    return Response({
-        "status": True,
-        "data": {
-            "total_products": total_products,
-            "in_stock": in_stock,
-            "out_of_stock": out_of_stock,
-            "low_stock": low_stock,
-        },
-    })
+        out_of_stock = queryset.filter(
+            stock=0
+        ).count()
 
-    
+        return Response({
+            "status": True,
+            "data": {
+                "total_products": total_products,
+                "in_stock": in_stock,
+                "out_of_stock": out_of_stock,
+                "low_stock": low_stock,
+            },
+        })
 
     @action(
         detail=False,
@@ -72,7 +70,9 @@ def cards(self, request):
     )
     def export(self, request):
 
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(
+            self.get_queryset()
+        )
 
         response = HttpResponse(
             content_type="text/csv"
@@ -97,11 +97,15 @@ def cards(self, request):
         ])
 
         for product in queryset:
-            stock_status = (
-                "Out of Stock"
-                if product.quantity == 0
-                else "In Stock"
-            )
+
+            if product.stock == 0:
+                stock_status = "Out of Stock"
+
+            elif product.stock <= 10:
+                stock_status = "Low Stock"
+
+            else:
+                stock_status = "In Stock"
 
             writer.writerow([
                 product.sku,
@@ -117,15 +121,15 @@ def cards(self, request):
 
         return response
 
-
-
-
-        
-
     def get_queryset(self):
 
-        is_deleted = self.request.query_params.get("isDeleted")
-        category = self.request.query_params.get("category")
+        is_deleted = self.request.query_params.get(
+            "isDeleted"
+        )
+
+        category = self.request.query_params.get(
+            "category"
+        )
 
         queryset = Product.objects.all()
 
@@ -133,19 +137,24 @@ def cards(self, request):
             pass
 
         elif is_deleted.lower() == "true":
-            queryset = queryset.filter(is_deleted=True)
+            queryset = queryset.filter(
+                is_deleted=True
+            )
 
         elif is_deleted.lower() == "false":
-            queryset = queryset.filter(is_deleted=False)
+            queryset = queryset.filter(
+                is_deleted=False
+            )
 
         else:
             return Product.objects.none()
 
         if category:
-            queryset = queryset.filter(category__iexact=category)
+            queryset = queryset.filter(
+                category__iexact=category
+            )
 
         return queryset.order_by("-created_at")
-    
 
     def get_permissions(self):
 
@@ -161,11 +170,14 @@ def cards(self, request):
 
     def list(self, request, *args, **kwargs):
 
-        is_deleted = request.query_params.get("isDeleted")
+        is_deleted = request.query_params.get(
+            "isDeleted"
+        )
 
         if (
             is_deleted is not None
-            and is_deleted.lower() not in ["true", "false"]
+            and is_deleted.lower()
+            not in ["true", "false"]
         ):
             return Response(
                 {
@@ -175,7 +187,9 @@ def cards(self, request):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(
+            self.get_queryset()
+        )
 
         page = self.paginate_queryset(queryset)
 
@@ -191,7 +205,10 @@ def cards(self, request):
                 "data": serializer.data,
                 "pagination": {
                     "page": int(
-                        request.query_params.get("page", 1)
+                        request.query_params.get(
+                            "page",
+                            1
+                        )
                     ),
                     "current": len(page),
                     "totalProduct": queryset.count(),
@@ -218,6 +235,7 @@ def cards(self, request):
         product = self.get_object()
 
         product.is_deleted = True
+
         product.save(
             update_fields=[
                 "is_deleted",
@@ -226,11 +244,11 @@ def cards(self, request):
         )
 
         return Response(
-        {
-            "status": 204,
-            "message": "The item has been deleted",
-        },
-        status=status.HTTP_200_OK,
+            {
+                "status": 204,
+                "message": "The item has been deleted",
+            },
+            status=status.HTTP_200_OK,
         )
 
 
