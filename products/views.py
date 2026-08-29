@@ -130,6 +130,7 @@ class ProductViewSet(ModelViewSet):
         category = self.request.query_params.get(
             "category"
         )
+        stock = self.request.query_params.get("stock")
 
         queryset = Product.objects.all()
 
