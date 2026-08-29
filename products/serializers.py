@@ -20,6 +20,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "stock",
             "tax_rate",
             "gst",
+            "image",
             "is_deleted",
             "created_at",
             "updated_at",
