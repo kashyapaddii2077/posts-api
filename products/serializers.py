@@ -25,6 +25,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "is_deleted",
             "created_at",
             "updated_at",
+            "stock_status",
         ]
 
         read_only_fields = [
@@ -64,3 +65,12 @@ class ProductSerializer(serializers.ModelSerializer):
         validated_data["sku"] = sku
 
         return Product.objects.create(**validated_data)
+
+    stock_status = serializers.SerializerMethodField()
+
+    def get_stock_status(self, obj):
+        if obj.quantity == 0:
+            return "Out of Stock"
+
+        return "In Stock"
+

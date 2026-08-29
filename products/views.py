@@ -1,3 +1,8 @@
+import csv
+
+from django.http import HttpResponse
+from rest_framework.decorators import action
+
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 from rest_framework.filters import SearchFilter
@@ -20,6 +25,63 @@ class ProductViewSet(ModelViewSet):
         "name",
         "category",
     ]
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="export",
+    )
+    def export(self, request):
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        response = HttpResponse(
+            content_type="text/csv"
+        )
+
+        response["Content-Disposition"] = (
+            'attachment; filename="products.csv"'
+        )
+
+        writer = csv.writer(response)
+
+        writer.writerow([
+            "SKU",
+            "Name",
+            "Category",
+            "Price",
+            "Stock",
+            "Quantity",
+            "Stock Status",
+            "Tax Rate",
+            "GST",
+        ])
+
+        for product in queryset:
+            stock_status = (
+                "Out of Stock"
+                if product.quantity == 0
+                else "In Stock"
+            )
+
+            writer.writerow([
+                product.sku,
+                product.name,
+                product.category,
+                product.price,
+                product.stock,
+                product.quantity,
+                stock_status,
+                product.tax_rate,
+                product.gst,
+            ])
+
+        return response
+
+
+
+
+        
 
     def get_queryset(self):
 
