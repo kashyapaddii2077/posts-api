@@ -17,6 +17,7 @@ urlpatterns = [
     path("api/", include("posts.urls")),
     path("api/", include("products.urls")),
     path("api/", include("inventory.urls")),
+    path("api/", include("customers.urls")),
 
     path(
         "api-auth/",
@@ -25,7 +26,7 @@ urlpatterns = [
 
     path(
         "api/token/",
-        obtain_auth_token,
+        obtain_auth_token,  
         name="api_token",
     ),
 
